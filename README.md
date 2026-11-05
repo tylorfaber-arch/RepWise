@@ -10,7 +10,7 @@ A personal Android strength-training app with a calorie counter. It builds each 
 
 Updates install over the old version and keep your data, because every build is signed with the same key (`app/debug.keystore`).
 
-To build yourself: open the folder in Android Studio, or run `./gradlew :app:assembleDebug`.
+To build yourself: open the folder in Android Studio, or run `./gradlew :app:assembleRelease` (shrunk, about 3 MB).
 
 ## Food data
 

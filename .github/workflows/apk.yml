@@ -19,12 +19,12 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
       - name: Build and test
-        run: ./gradlew :core:test :app:assembleDebug --no-daemon
+        run: ./gradlew :core:test :app:assembleRelease --no-daemon
       - name: Publish "latest" release with the APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk RepWise.apk
+          cp app/build/outputs/apk/release/app-release.apk RepWise.apk
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest RepWise.apk --title "RepWise (latest build)" \
             --notes "Built from ${GITHUB_SHA::7}. On your phone, tap RepWise.apk to download, then open it to install."
