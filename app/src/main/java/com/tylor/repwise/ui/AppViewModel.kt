@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.tylor.repwise.RepWiseApp
 import com.tylor.repwise.core.*
 import com.tylor.repwise.data.*
+import com.tylor.repwise.food.FoodLookup
 import com.tylor.repwise.health.HealthSyncWorker
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlin.math.roundToInt
 import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -116,6 +118,47 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         HealthSyncWorker.enqueue(getApplication())
     }
 
+    private val lookup = FoodLookup { profile.value.usdaApiKey.ifBlank { FoodLookup.DEMO_KEY } }
+
+    /** Barcode or text lookup state for the add-food sheet. */
+    private val _lookupBusy = MutableStateFlow(false)
+    val lookupBusy: StateFlow<Boolean> = _lookupBusy
+    private val _lookupMessage = MutableStateFlow<String?>(null)
+    val lookupMessage: StateFlow<String?> = _lookupMessage
+    private val _searchResults = MutableStateFlow<List<FoodNutrition>>(emptyList())
+    val searchResults: StateFlow<List<FoodNutrition>> = _searchResults
+    private val _scanned = MutableStateFlow<FoodNutrition?>(null)
+    val scanned: StateFlow<FoodNutrition?> = _scanned
+
+    fun lookupBarcode(code: String) = viewModelScope.launch {
+        _lookupBusy.value = true; _lookupMessage.value = null
+        val found = lookup.byBarcode(code)
+        _scanned.value = found
+        if (found == null) _lookupMessage.value = "No match for barcode $code. Enter it manually below."
+        _lookupBusy.value = false
+    }
+
+    fun searchFood(query: String) = viewModelScope.launch {
+        if (query.isBlank()) return@launch
+        _lookupBusy.value = true; _lookupMessage.value = null
+        _searchResults.value = lookup.search(query.trim())
+        if (_searchResults.value.isEmpty()) _lookupMessage.value = "Nothing found (check your connection)."
+        _lookupBusy.value = false
+    }
+
+    fun clearLookup() { _scanned.value = null; _searchResults.value = emptyList(); _lookupMessage.value = null }
+
+    fun setLookupMessage(msg: String?) { _lookupMessage.value = msg }
+
+    fun addPortion(food: FoodNutrition, amount: Double, unit: FoodUnit, meal: String) {
+        val m = food.macrosFor(amount, unit) ?: return
+        addFood(FoodEntry(
+            name = listOfNotNull(food.brand, food.name).joinToString(" ").take(80),
+            kcal = m.kcal.roundToInt(), proteinG = m.proteinG, carbsG = m.carbsG, fatG = m.fatG,
+            meal = meal, amount = amount, unit = unit.name, barcode = food.barcode, eatenAt = 0,
+        ))
+    }
+
     fun deleteFood(entry: FoodEntry) = viewModelScope.launch {
         db.food().delete(entry.id)
         runCatching { healthConnect.deleteFood(entry.id) }
@@ -139,6 +182,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 fun SetLog.toCore() = LoggedSet(exerciseId, reps, weightKg, completedAt)
+
+fun Profile.unitSystem(): UnitSystem = runCatching { UnitSystem.valueOf(units) }.getOrDefault(UnitSystem.IMPERIAL)
 
 fun Profile.equipmentSet(): Set<Equipment> =
     equipment.split(",").filter { it.isNotBlank() }.map { Equipment.valueOf(it) }.toSet()

@@ -2,13 +2,22 @@
 
 A personal Android strength-training app with a calorie counter. It builds each workout around your most-recovered muscles, suggests weights for progressive overload, tracks a daily calorie budget, and writes workouts, food and weigh-ins to Health Connect.
 
-## Open and run
+## Install on your phone (no cable)
 
-1. Install Android Studio (latest stable) and open this folder.
-2. Let Gradle sync. It downloads the Android SDK 35 and the libraries.
-3. On your Pixel: Settings > About phone > tap Build number 7 times, then Developer options > USB debugging on.
-4. Plug in the phone and press Run.
-5. In the app, open **Me** > **Connect Health Connect** and allow the permissions.
+1. On the Pixel, open the repo's **Releases** page and tap **RepWise.apk** under "RepWise (latest build)". Every push to `main` rebuilds it.
+2. Open the download. The first time, Android asks you to allow installs from your browser or Files app; allow it and tap Install.
+3. In the app, open **Me** > **Connect Health Connect** and allow the permissions.
+
+Updates install over the old version and keep your data, because every build is signed with the same key (`app/debug.keystore`).
+
+To build yourself: open the folder in Android Studio, or run `./gradlew :app:assembleDebug`.
+
+## Food data
+
+- **Barcode**: tap Add food > Scan barcode. It uses Google's on-device scanner (no camera permission needed) and looks the code up in Open Food Facts (3M+ products, free, no key), then USDA FoodData Central branded foods (~400k US products) if Open Food Facts doesn't have it.
+- **Search**: searches USDA (including generic foods like "banana") and Open Food Facts together.
+- **Units**: serving, g, oz, lb, kg, ml, L, fl oz, cup, tbsp, tsp. Volumes convert at about 1 g per ml.
+- USDA works out of the box with a shared demo key that has a low rate limit. For your own limit, get a free key at https://api.data.gov/signup and paste it in **Me** > Profile.
 
 ## Layout
 
@@ -31,5 +40,4 @@ Weights lifted per set stay in RepWise; Health Connect has no field for them.
 ## Known gaps in this first version
 
 - The generated plan and the in-progress workout are kept in memory, so they're lost if Android kills the app mid-workout.
-- No food database or barcode scanner yet; you type calories and macros (recent foods are one tap).
-- Units are kg only.
+- Body weight, lifts and height show in lb/in or kg/cm (Me > Profile > Units); everything is stored metric.

@@ -13,8 +13,18 @@ android {
         applicationId = "com.tylor.repwise"
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    // Shared debug key (checked in, not secret) so phone updates from CI and local builds install over each other.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
@@ -51,5 +61,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.health.connect)
+    implementation(libs.play.services.code.scanner)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

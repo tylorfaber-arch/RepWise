@@ -49,16 +49,17 @@ fun MeScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Weight", style = MaterialTheme.typography.titleMedium)
                 val goal = WeightGoal.valueOf(profile.weightGoal)
-                Text("Now ${fmt(profile.weightKg)} kg  ·  Goal ${fmt(profile.goalWeightKg)} kg")
+                val us = profile.unitSystem(); val wl = Units.weightLabel(us)
+                Text("Now ${fmt(Units.weightToDisplay(profile.weightKg, us))} $wl  ·  Goal ${fmt(Units.weightToDisplay(profile.goalWeightKg, us))} $wl")
                 Calories.daysToGoal(profile.weightKg, profile.goalWeightKg, goal)?.let {
                     Text("About $it days to goal at ${goal.lbPerWeek} lb/week", style = MaterialTheme.typography.bodySmall)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(weightText, { weightText = it }, Modifier.width(120.dp), label = { Text("kg") },
+                    OutlinedTextField(weightText, { weightText = it }, Modifier.width(120.dp), label = { Text(wl) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
-                    Button(onClick = { weightText.toDoubleOrNull()?.let { vm.addWeighIn(it); weightText = "" } }) { Text("Weigh in") }
+                    Button(onClick = { weightText.toDoubleOrNull()?.let { vm.addWeighIn(Units.weightFromDisplay(it, us)); weightText = "" } }) { Text("Weigh in") }
                 }
-                weighIns.take(5).forEach { Text("${fmt(it.weightKg)} kg  ·  ${java.text.DateFormat.getDateInstance().format(it.measuredAt)}", style = MaterialTheme.typography.bodySmall) }
+                weighIns.take(5).forEach { Text("${fmt(Units.weightToDisplay(it.weightKg, us))} $wl  ·  ${java.text.DateFormat.getDateInstance().format(it.measuredAt)}", style = MaterialTheme.typography.bodySmall) }
             }
         }
 
@@ -75,14 +76,16 @@ private fun ProfileEditor(profile: Profile, onSave: (Profile) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Profile", style = MaterialTheme.typography.titleMedium)
+            Choice("Units", UnitSystem.entries.map { it.name }, p.units) { p = p.copy(units = it) }
+            val us = p.unitSystem()
             Choice("Training goal", Goal.entries.map { it.name }, p.goal) { p = p.copy(goal = it) }
             Choice("Weight plan", WeightGoal.entries.map { it.name }, p.weightGoal) { p = p.copy(weightGoal = it) }
             Choice("Activity", ActivityLevel.entries.map { it.name }, p.activity) { p = p.copy(activity = it) }
             Choice("Sex (for calorie math)", Sex.entries.map { it.name }, p.sex) { p = p.copy(sex = it) }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                NumField("Height cm", p.heightCm, number, Modifier.weight(1f)) { p = p.copy(heightCm = it) }
+                NumField("Height ${Units.heightLabel(us)}", Units.heightToDisplay(p.heightCm, us), number, Modifier.weight(1f)) { p = p.copy(heightCm = Units.heightFromDisplay(it, us)) }
                 NumField("Age", p.age.toDouble(), number, Modifier.weight(1f)) { p = p.copy(age = it.toInt()) }
-                NumField("Goal kg", p.goalWeightKg, number, Modifier.weight(1f)) { p = p.copy(goalWeightKg = it) }
+                NumField("Goal ${Units.weightLabel(us)}", Units.weightToDisplay(p.goalWeightKg, us), number, Modifier.weight(1f)) { p = p.copy(goalWeightKg = Units.weightFromDisplay(it, us)) }
             }
             Text("Equipment", style = MaterialTheme.typography.labelMedium)
             val selected = p.equipmentSet()
@@ -94,6 +97,10 @@ private fun ProfileEditor(profile: Profile, onSave: (Profile) -> Unit) {
                     })
                 }
             }
+            if (us == UnitSystem.IMPERIAL) Text("Height ${Units.feetInches(p.heightCm)}", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(p.usdaApiKey, { p = p.copy(usdaApiKey = it.trim()) }, Modifier.fillMaxWidth(),
+                label = { Text("USDA API key (optional)") }, singleLine = true,
+                supportingText = { Text("Free at api.data.gov/signup. Without one, USDA lookups share a low rate limit.") })
             Button(onClick = { onSave(p) }) { Text("Save") }
         }
     }

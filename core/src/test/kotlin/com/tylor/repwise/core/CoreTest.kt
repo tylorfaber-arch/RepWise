@@ -53,4 +53,15 @@ class CoreTest {
         assertEquals(154, Calories.daysToGoal(90.0, 80.0, WeightGoal.LOSE_1))
         assertNull(Calories.daysToGoal(80.0, 90.0, WeightGoal.LOSE_1))
     }
+
+    @Test fun unitConversions() {
+        assertEquals(220.46, Units.kgToLb(100.0), 0.01)
+        assertEquals(100.0, Units.weightFromDisplay(Units.weightToDisplay(100.0, UnitSystem.IMPERIAL), UnitSystem.IMPERIAL), 1e-9)
+        assertEquals("5' 10\"", Units.feetInches(177.8))
+        val food = FoodNutrition("Oats", kcalPer100g = 380.0, proteinPer100g = 13.0, servingGrams = 40.0)
+        assertEquals(152.0, food.macrosFor(1.0, FoodUnit.SERVING)!!.kcal, 0.01)
+        assertEquals(107.73, food.macrosFor(1.0, FoodUnit.OUNCE)!!.kcal, 0.01)
+        assertEquals(236.59, food.gramsFor(1.0, FoodUnit.CUP)!!, 0.01)
+        assertNull(food.copy(servingGrams = null).macrosFor(1.0, FoodUnit.SERVING))
+    }
 }

@@ -18,6 +18,8 @@ data class Profile(
     val activity: String = "MODERATE",          // core.ActivityLevel
     val weightGoal: String = "MAINTAIN",        // core.WeightGoal
     val goalWeightKg: Double = 80.0,
+    @ColumnInfo(defaultValue = "IMPERIAL") val units: String = "IMPERIAL", // core.UnitSystem
+    @ColumnInfo(defaultValue = "") val usdaApiKey: String = "",   // optional free key from api.data.gov
 )
 
 @Entity(indices = [Index("measuredAt")])
@@ -60,6 +62,9 @@ data class FoodEntry(
     val carbsG: Double = 0.0,
     val fatG: Double = 0.0,
     val meal: String = "SNACK",                // BREAKFAST, LUNCH, DINNER, SNACK
+    @ColumnInfo(defaultValue = "1.0") val amount: Double = 1.0,
+    @ColumnInfo(defaultValue = "SERVING") val unit: String = "SERVING", // core.FoodUnit
+    val barcode: String? = null,
     val eatenAt: Long,
     val syncStatus: SyncStatus = SyncStatus.PENDING,
 )
@@ -109,7 +114,7 @@ interface WeighInDao {
     @Query("SELECT * FROM WeighIn WHERE syncStatus != 'SYNCED'") suspend fun unsynced(): List<WeighIn>
 }
 
-@Database(entities = [Profile::class, Workout::class, SetLog::class, FoodEntry::class, WeighIn::class], version = 1)
+@Database(entities = [Profile::class, Workout::class, SetLog::class, FoodEntry::class, WeighIn::class], version = 2, autoMigrations = [AutoMigration(from = 1, to = 2)])
 abstract class RepWiseDatabase : RoomDatabase() {
     abstract fun profiles(): ProfileDao
     abstract fun workouts(): WorkoutDao
